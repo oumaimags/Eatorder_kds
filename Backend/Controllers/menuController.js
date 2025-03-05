@@ -51,7 +51,7 @@ const deleteDish = async (req, res) => {
 };
 
 // Récupérer tous les plats
-const getAllDishes = async (req, res) => {
+const getAllDishes = async ( res) => {
     try {
         const dishes = await Menu.getAllDishes();
         res.json(dishes);

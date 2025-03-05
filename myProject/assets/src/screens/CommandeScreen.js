@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/FontAwesome";
+import * as Print from "expo-print"; // Importer expo-print
 
 const initialOrders = [
   { id: "1", table: "Table 21", server: "Sam Thorpe", time: "10:32 AM", items: ["Cobb Salad", "Side Hush Puppies"], status: "pending" },
@@ -14,10 +15,95 @@ const CommandeScreen = () => {
   const [orders, setOrders] = useState(initialOrders);
   const [filter, setFilter] = useState("all");
 
-  const handlePrint = (orderId) => {
-    console.log(`Impression de la commande ${orderId}`);
+  // Fonction pour imprimer uniquement les informations de la commande
+  const handlePrint = async (orderId) => {
+    const order = orders.find(order => order.id === orderId);
+  
+    const orderContent = `
+      <html>
+        <head>
+          <style>
+            body { 
+              font-family: "Courier New", monospace; 
+              font-size: 12px; 
+              text-align: center; 
+              margin: 0; 
+              padding: 0;
+            }
+            .ticket {
+              width: 58mm; 
+              max-width: 58mm;
+              margin: auto;
+              padding: 5px;
+              background-color: #fff;
+            }
+            .header {
+              font-size: 16px; 
+              font-weight: bold;
+              margin-bottom: 5px;
+            }
+            .order-details, .items {
+              font-size: 12px;
+              text-align: left;
+              margin-bottom: 5px;
+              padding: 0 5px;
+            }
+            .items div {
+              border-bottom: 1px dashed #000;
+              padding: 2px 0;
+            }
+            .footer {
+              font-size: 10px;
+              margin-top: 10px;
+              font-style: italic;
+            }
+            .separator {
+              border-top: 1px dashed #000;
+              margin: 5px 0;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="ticket">
+            <div class="header">🍽️ Restaurant EatOrder</div>
+            <div class="separator"></div>
+            <div class="order-details">
+              <strong>Commande #${order.id}</strong><br/>
+              <strong>Table :</strong> ${order.table}<br/>
+              <strong>Serveur :</strong> ${order.server}<br/>
+              <strong>Heure :</strong> ${order.time}
+            </div>
+            <div class="separator"></div>
+            <div class="items">
+              <strong>Articles :</strong>
+              ${order.items.map(item => `<div>${item}</div>`).join("")}
+            </div>
+            <div class="separator"></div>
+            <div class="footer">Merci pour votre commande ! 😊</div>
+          </div>
+        </body>
+      </html>
+    `;
+  
+    try {
+      // 1. Générer un PDF depuis HTML
+      const { uri } = await Print.printToFileAsync({ html: orderContent });
+  
+      // 2. Afficher le chemin du fichier généré (debug)
+      console.log("PDF généré :", uri);
+  
+      // 3. Optionnel : Ouvrir le fichier PDF pour voir si l'impression fonctionne bien
+      await shareAsync(uri, { mimeType: "application/pdf", dialogTitle: "Imprimer Ticket" });
+  
+      // 4. Envoyer à l'impression directement
+      await Print.printAsync({ uri });
+    } catch (error) {
+      console.error("Erreur d'impression :", error);
+    }
   };
+  
 
+  // Fonction pour mettre à jour le statut de la commande
   const updateOrderStatus = (orderId, newStatus) => {
     const updatedOrders = orders.map(order =>
       order.id === orderId ? { ...order, status: newStatus } : order
@@ -25,6 +111,7 @@ const CommandeScreen = () => {
     setOrders(updatedOrders);
   };
 
+  // Filtrer les commandes en fonction du statut
   const filteredOrders = orders.filter(order =>
     filter === "all" ? true : order.status === filter
   );
@@ -75,7 +162,7 @@ const CommandeScreen = () => {
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={[styles.actionButton, styles.printButton]}
-                onPress={() => handlePrint(order.id)}
+                onPress={() => handlePrint(order.id)}  
               >
                 <Icon name="print" size={20} color="#fff" />
               </TouchableOpacity>
@@ -141,6 +228,10 @@ const styles = StyleSheet.create({
   returnButton: { backgroundColor: "orange" },
   statusText: { marginTop: 10, fontWeight: "bold", textAlign: "center" },
 });
+
+
+
+
 
 
 
