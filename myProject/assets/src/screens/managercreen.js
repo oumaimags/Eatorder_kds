@@ -183,35 +183,74 @@ const UserManagement = () => {
 // --------------------------
 // Menu Management Component
 // --------------------------
-const MenuManagement = () => {
+const MenuManagement = () => { 
   // State for menu items list
   const [menuItems, setMenuItems] = useState([
-    { id: 1, name: "Pizza", description: "Cheese Pizza" },
-    { id: 2, name: "Burger", description: "Classic Burger" },
+    { id: 1, name: "Pizza", description: "Cheese Pizza", price: 10, ingredients: "Cheese, Dough, Tomato" },
+    { id: 2, name: "Burger", description: "Classic Burger", price: 8, ingredients: "Bread, Beef, Lettuce, Tomato" },
   ]);
+
+  // States for the add item modal
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPrice, setNewPrice] = useState("");
+  const [newIngredients, setNewIngredients] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+
+  // States for the delete confirmation modal
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null); // To track the item to be deleted
 
   // Function to add a new menu item
   const handleAddItem = () => {
     const newItem = {
       id: Date.now(),
-      name: "Pasta",
-      description: "Pasta Carbonara",
+      name: newName,
+      description: newDescription,
+      price: parseFloat(newPrice), // Ensure the price is a number
+      ingredients: newIngredients,
     };
     setMenuItems([...menuItems, newItem]);
+    setAddModalVisible(false); // Close modal after adding
   };
 
   // Function to delete a menu item
   const handleDeleteItem = (id) => {
     setMenuItems(menuItems.filter((item) => item.id !== id));
+    setDeleteModalVisible(false); // Close confirmation modal
+    setItemToDelete(null); // Clear the item to delete
   };
 
-  // Function to update a menu item (can be expanded with a form for name and description)
+  // Function to update a menu item
   const handleUpdateItem = (id) => {
     const itemToUpdate = menuItems.find((item) => item.id === id);
-    const updatedMenu = menuItems.map((item) =>
-      item.id === id ? { ...item, name: "Updated " + item.name } : item
-    );
-    setMenuItems(updatedMenu);
+    setNewName(itemToUpdate.name);
+    setNewDescription(itemToUpdate.description);
+    setNewPrice(itemToUpdate.price.toString()); // Convert number to string for input
+    setNewIngredients(itemToUpdate.ingredients);
+    setAddModalVisible(true); // Open modal for updating item
+  };
+
+  // Function to open the add item modal and reset the form fields
+  const openAddModal = () => {
+    setNewName(""); // Reset fields to be empty
+    setNewPrice(""); 
+    setNewIngredients(""); 
+    setNewDescription(""); 
+    setAddModalVisible(true); // Show the modal
+  };
+
+  // Function to show the delete confirmation modal
+  const confirmDelete = (id) => {
+    setItemToDelete(id);
+    setDeleteModalVisible(true);
+  };
+
+  // Function to handle the confirmation of deletion
+  const handleDeleteConfirmed = () => {
+    if (itemToDelete !== null) {
+      handleDeleteItem(itemToDelete);
+    }
   };
 
   return (
@@ -221,74 +260,154 @@ const MenuManagement = () => {
         <View key={item.id} style={styles.menuItem}>
           <Text>{item.name}</Text>
           <Text>{item.description}</Text>
+          <Text>{`$${item.price}`}</Text>
+          <Text>{`Ingredients: ${item.ingredients}`}</Text>
           <View style={styles.menuItemActions}>
             {/* Button to update item */}
             <TouchableOpacity onPress={() => handleUpdateItem(item.id)}>
               <Icon name="edit" size={20} color="blue" />
             </TouchableOpacity>
             {/* Button to delete item */}
-            <TouchableOpacity onPress={() => handleDeleteItem(item.id)}>
+            <TouchableOpacity onPress={() => confirmDelete(item.id)}>
               <Icon name="trash" size={20} color="red" />
             </TouchableOpacity>
           </View>
         </View>
       ))}
-      <TouchableOpacity style={styles.button} onPress={handleAddItem}>
+      <TouchableOpacity style={styles.button} onPress={openAddModal}>
         <Text style={styles.buttonText}>Add Item</Text>
       </TouchableOpacity>
+
+      {/* Add Item Modal */}
+      <Modal transparent visible={addModalVisible} animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Add Menu Item</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Item Name"
+              value={newName}
+              onChangeText={setNewName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Price"
+              keyboardType="numeric"
+              value={newPrice}
+              onChangeText={setNewPrice}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Ingredients"
+              value={newIngredients}
+              onChangeText={setNewIngredients}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Description"
+              value={newDescription}
+              onChangeText={setNewDescription}
+            />
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalCancelButton]}
+                onPress={() => setAddModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalAddButton]}
+                onPress={handleAddItem}
+              >
+                <Text style={styles.modalButtonText}>Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal transparent visible={deleteModalVisible} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Delete Confirmation</Text>
+            <Text style={styles.modalText}>Are you sure you want to delete this item?</Text>
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalCancelButton]}
+                onPress={() => setDeleteModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalDeleteButton]}
+                onPress={handleDeleteConfirmed}
+              >
+                <Text style={styles.modalButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
+
+
 
 // --------------------------
 // Station Management Component
 // --------------------------
 const StationManagement = () => {
-  // State for stations list
   const [stations, setStations] = useState([
     { id: 1, name: "Grill", tablets: 1, paused: false },
     { id: 2, name: "Fryer", tablets: 1, paused: false },
   ]);
+  const [newStationName, setNewStationName] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [stationToDelete, setStationToDelete] = useState(null); // State to track the station to be deleted
 
-  // Function to add a new station
   const handleAddStation = () => {
-    const newStation = {
-      id: Date.now(),
-      name: "Oven",
-      tablets: 4,
-      paused: false,
-    };
-    setStations([...stations, newStation]);
+    if (newStationName.trim() !== "") {
+      const newStation = {
+        id: Date.now(),
+        name: newStationName,
+        tablets: 1,
+        paused: false,
+      };
+      setStations([...stations, newStation]);
+      setNewStationName("");
+      setModalVisible(false);
+    }
   };
 
-  // Function to assign an additional tablet to a station
-  const handleAssignTablet = (stationId) => {
-    setStations(
-      stations.map((station) =>
-        station.id === stationId
-          ? { ...station, tablets: station.tablets + 1 }
-          : station
-      )
-    );
-  };
-
-  // Function to toggle the paused state of a station
-  const handlePauseStation = (stationId) => {
-    setStations(
-      stations.map((station) =>
-        station.id === stationId
-          ? { ...station, paused: !station.paused }
-          : station
-      )
-    );
-  };
-
-  // Function to delete a station
   const handleDeleteStation = (id) => {
     setStations(stations.filter((station) => station.id !== id));
+    setDeleteModalVisible(false);
+    setStationToDelete(null);
   };
-  
-  
+
+  const handlePauseStation = (id) => {
+    setStations(
+      stations.map((station) =>
+        station.id === id ? { ...station, paused: !station.paused } : station
+      )
+    );
+  };
+
+  // Function to show the delete confirmation modal
+  const confirmDelete = (id) => {
+    setStationToDelete(id);
+    setDeleteModalVisible(true);
+  };
+
+  // Function to handle the confirmation of deletion
+  const handleDeleteConfirmed = () => {
+    if (stationToDelete !== null) {
+      handleDeleteStation(stationToDelete);
+    }
+  };
 
   return (
     <View style={styles.section}>
@@ -296,17 +415,12 @@ const StationManagement = () => {
       {stations.map((station) => (
         <View key={station.id} style={styles.stationItem}>
           <Text>{station.name}</Text>
-          <TouchableOpacity onPress={() => handleDeleteStation(station.id)}>
-            <Icon
-              name="trash"
-              size={20}
-              color="red"
-              style={styles.iconMargin}
-            />
+          <TouchableOpacity onPress={() => confirmDelete(station.id)}>
+            <Icon name="trash" size={20} color="red" style={styles.iconMargin} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => handlePauseStation(station.id)}>
             <Icon
-              name={station.paused ? "play" : "clock"}
+              name={station.paused ? "play" : "pause"}
               size={20}
               color={station.paused ? "green" : "orange"}
               style={styles.iconMargin}
@@ -314,13 +428,65 @@ const StationManagement = () => {
           </TouchableOpacity>
         </View>
       ))}
-      <TouchableOpacity style={styles.button} onPress={handleAddStation}>
+      <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
         <Text style={styles.buttonText}>Add Station</Text>
       </TouchableOpacity>
+
+      <Modal visible={modalVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Add New Station</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Station Name"
+              value={newStationName}
+              onChangeText={setNewStationName}
+            />
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalCancelButton]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalAddButton]}
+                onPress={handleAddStation}
+              >
+                <Text style={styles.modalButtonText}>Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal transparent visible={deleteModalVisible} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Delete Confirmation</Text>
+            <Text style={styles.modalText}>Are you sure you want to delete this station?</Text>
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalCancelButton]}
+                onPress={() => setDeleteModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalDeleteButton]}
+                onPress={handleDeleteConfirmed}
+              >
+                <Text style={styles.modalButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
- 
-  };
+};
+
   
 // --------------------------
 // Manager Screen Component
